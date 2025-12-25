@@ -34,7 +34,7 @@ namespace Lab04
       try
       {
         if (prompt != null)
-          Console.Write(prompt);
+          Console.Write(prompt + ": ");
         int numb = int.Parse(Console.ReadLine() ?? ""); // Может выбросить FormatException или OverflowException, ?? "" для того, чтобы не было null (мозолит глаза)
         if (numb != 0 && numb != 1)
           throw new ArgumentOutOfRangeException(null, null, "Ошибка: введено не 0 и не 1.");
@@ -173,25 +173,41 @@ namespace Lab04
     static public IEnumerable<int[]> QuickSort(int[] array, int first, int last, bool ascending = true) // Быстрая сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
+
+      foreach (var step in QuickSortInternal(currentArray, first, last, ascending))
+        yield return step;
+    }
+
+    // Вспомогательный рекурсивный метод, возвращающий последовательность шагов
+    static private IEnumerable<int[]> QuickSortInternal(int[] array, int first, int last, bool ascending)
+    {
       if (first < last)
       {
-        int pivotIndex = Partition(currentArray, first, last);
-        yield return currentArray;
-        foreach (var step in QuickSort(currentArray, first, pivotIndex - 1))
-          yield return (int[])step.Clone();
-        foreach (var step in QuickSort(currentArray, pivotIndex + 1, last))
-          yield return (int[])step.Clone();
+        int pivotIndex = Partition(array, first, last, ascending);
+        yield return (int[])array.Clone(); // состояние после разделения
+
+        // Рекурсивно сортируем левую часть
+        foreach (var step in QuickSortInternal(array, first, pivotIndex - 1, ascending))
+          yield return step;
+
+        // Рекурсивно сортируем правую часть
+        foreach (var step in QuickSortInternal(array, pivotIndex + 1, last, ascending))
+          yield return step;
       }
     }
 
-    static private int Partition(int[] array, int first, int last) // Вспомогательный метод для быстрой сортировки, выбор опорного элемента
+    static private int Partition(int[] array, int first, int last, bool ascending = true) // Вспомогательный метод для быстрой сортировки, выбор опорного элемента
     {
       int pivot = array[last]; // Последний элемент (опорный)
       int i = first - 1; // Индекс меньшего элемента
 
       for (int j = first; j < last; j++) // Проходим по всем элементам
       {
-        if (array[j] <= pivot) // Если текущий элемент меньше или равен опорному
+        bool shouldMoveLeft = ascending
+          ? (array[j] <= pivot)
+          : (array[j] >= pivot);
+
+        if (shouldMoveLeft) // Если текущий элемент меньше или равен опорному
         {
           i++;
           (array[i], array[j]) = (array[j], array[i]); // Меняем элементы местами
@@ -201,24 +217,24 @@ namespace Lab04
       return i + 1; // Возвращаем индекс опорного элемента
     }
 
-    static public IEnumerable<int[]> MergeSort(int[] array, int first, int last, bool ascending = true) // Сортировка слиянием, генератор
+    static public IEnumerable<int[]> MergeSort(int[] array, int first, int last, bool ascending = true)
     {
-      int[] currentArray = (int[])array.Clone();
       if (first < last)
       {
         int mid = first + (last - first) / 2;
 
-        foreach (var step in MergeSort(currentArray, first, mid))
-          yield return (int[])step.Clone();
-        foreach (var step in MergeSort(currentArray, mid + 1, last))
+        foreach (var step in MergeSort(array, first, mid, ascending))
           yield return (int[])step.Clone();
 
-        foreach (var step in Merge(currentArray, first, mid, last))
+        foreach (var step in MergeSort(array, mid + 1, last, ascending))
+          yield return (int[])step.Clone();
+
+        foreach (var step in Merge(array, first, mid, last, ascending))
           yield return (int[])step.Clone();
       }
     }
 
-    static private IEnumerable<int[]> Merge(int[] array, int first, int mid, int last) // Вспомогательный метод для сортировки слиянием
+    static private IEnumerable<int[]> Merge(int[] array, int first, int mid, int last, bool ascending = true)
     {
       int n1 = mid - first + 1;
       int n2 = last - mid;
@@ -235,7 +251,11 @@ namespace Lab04
 
       while (iIndex < n1 && jIndex < n2)
       {
-        if (L[iIndex] <= R[jIndex])
+        bool takeFromLeft = ascending
+            ? L[iIndex] <= R[jIndex]
+            : L[iIndex] >= R[jIndex];
+
+        if (takeFromLeft)
         {
           array[k] = L[iIndex];
           iIndex++;
@@ -246,7 +266,7 @@ namespace Lab04
           jIndex++;
         }
         k++;
-        yield return array;
+        yield return (int[])array.Clone();
       }
 
       while (iIndex < n1)
@@ -254,7 +274,7 @@ namespace Lab04
         array[k] = L[iIndex];
         iIndex++;
         k++;
-        yield return array;
+        yield return (int[])array.Clone();
       }
 
       while (jIndex < n2)
@@ -262,18 +282,18 @@ namespace Lab04
         array[k] = R[jIndex];
         jIndex++;
         k++;
-        yield return array;
+        yield return (int[])array.Clone();
       }
     }
 
-    static public IEnumerable<int[]> HeapSort(int[] array) // Пирамидальная сортировка, генератор
+    static public IEnumerable<int[]> HeapSort(int[] array, bool ascending = true) // Пирамидальная сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
       int n = currentArray.Length;
 
       for (int i = n / 2 - 1; i >= 0; i--)
       {
-        foreach (var step in Heapify(currentArray, n, i))
+        foreach (var step in Heapify(currentArray, n, i, ascending))
           yield return step;
       }
 
@@ -282,29 +302,42 @@ namespace Lab04
         (currentArray[0], currentArray[i]) = (currentArray[i], currentArray[0]);
         yield return currentArray;
 
-        foreach (var step in Heapify(currentArray, i, 0))
+        foreach (var step in Heapify(currentArray, i, 0, ascending))
           yield return step;
       }
     }
 
-    static private IEnumerable<int[]> Heapify(int[] array, int n, int i) // Вспомогательный метод для пирамидальной сортировки
+    static private IEnumerable<int[]> Heapify(int[] array, int n, int i, bool ascending = true) // Вспомогательный метод для пирамидальной сортировки
     {
-      int largest = i;
+      int target = i;
       int left = 2 * i + 1;
       int right = 2 * i + 2;
 
-      if (left < n && array[left] > array[largest])
-        largest = left;
-
-      if (right < n && array[right] > array[largest])
-        largest = right;
-
-      if (largest != i)
+      if (ascending)
       {
-        (array[i], array[largest]) = (array[largest], array[i]);
+        // Max-heap: ищем наибольший
+        if (left < n && array[left] > array[target])
+          target = left;
+
+        if (right < n && array[right] > array[target])
+          target = right;
+      }
+      else
+      {
+        // Min-heap: ищем наименьший
+        if (left < n && array[left] < array[target])
+          target = left;
+
+        if (right < n && array[right] < array[target])
+          target = right;
+      }
+
+      if (target != i)
+      {
+        (array[i], array[target]) = (array[target], array[i]);
         yield return array;
 
-        foreach (var step in Heapify(array, n, largest))
+        foreach (var step in Heapify(array, n, target, ascending))
           yield return step;
       }
     }
@@ -385,7 +418,7 @@ namespace Lab04
 
     static public bool IsAscendingInput()
     {
-      return CommonUtilities.GetAndValidateNumberAsBool("Введите направление сортировки (1 - возрастание, 0 - убывание): ");
+      return CommonUtilities.GetAndValidateNumberAsBool("Введите направление сортировки (1 - возрастание, 0 - убывание)");
     }
 
 
@@ -398,7 +431,7 @@ namespace Lab04
 
       currentArray = ArrayOperations.GenerateArray(length, min, max); // Действие с массивом
 
-      Console.WriteLine("Массив заполнен случайными числами:");
+      Console.WriteLine("Массив заполнен случайными числами.");
       PrintCurrentArray(); // Вывод
     }
 
@@ -488,7 +521,8 @@ namespace Lab04
         return;
       }
       Console.WriteLine("ПИРАМИДАЛЬНАЯ СОРТИРОВКА");
-      currentArray = PrintArrayStepByStep(ArrayOperations.HeapSort(currentArray));
+      bool ascending = IsAscendingInput();
+      currentArray = PrintArrayStepByStep(ArrayOperations.HeapSort(currentArray, ascending));
       PrintCurrentArray();
     }
 
@@ -499,7 +533,12 @@ namespace Lab04
         Console.WriteLine("Массив не заполнен.");
         return;
       }
-      int target = CommonUtilities.GetAndValidateNumber("Введите искомое значение: ");
+      if (!ArrayOperations.SortedCheck(currentArray).Item1)
+      {
+        Console.WriteLine("Массив не отсортирован.");
+        return;
+      }
+      int target = CommonUtilities.GetAndValidateNumber("Введите искомое значение");
       int index = ArrayOperations.BinarySearch(currentArray, target);
       if (index >= 0)
         Console.WriteLine($"Элемент найден на позиции {index + 1}.");
