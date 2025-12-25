@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Lab04
+namespace Lab05
 {
   public class CommonUtilities
   {
@@ -203,11 +203,11 @@ namespace Lab04
 
       for (int j = first; j < last; j++) // Проходим по всем элементам
       {
-        bool shouldMoveLeft = ascending
+        bool shouldMovestart = ascending
           ? (array[j] <= pivot)
           : (array[j] >= pivot);
 
-        if (shouldMoveLeft) // Если текущий элемент меньше или равен опорному
+        if (shouldMovestart) // Если текущий элемент меньше или равен опорному
         {
           i++;
           (array[i], array[j]) = (array[j], array[i]); // Меняем элементы местами
@@ -251,11 +251,11 @@ namespace Lab04
 
       while (iIndex < n1 && jIndex < n2)
       {
-        bool takeFromLeft = ascending
+        bool takeFromstart = ascending
             ? L[iIndex] <= R[jIndex]
             : L[iIndex] >= R[jIndex];
 
-        if (takeFromLeft)
+        if (takeFromstart)
         {
           array[k] = L[iIndex];
           iIndex++;
@@ -310,26 +310,26 @@ namespace Lab04
     static private IEnumerable<int[]> Heapify(int[] array, int n, int i, bool ascending = true) // Вспомогательный метод для пирамидальной сортировки
     {
       int target = i;
-      int left = 2 * i + 1;
-      int right = 2 * i + 2;
+      int start = 2 * i + 1;
+      int end = 2 * i + 2;
 
       if (ascending)
       {
         // Max-heap: ищем наибольший
-        if (left < n && array[left] > array[target])
-          target = left;
+        if (start < n && array[start] > array[target])
+          target = start;
 
-        if (right < n && array[right] > array[target])
-          target = right;
+        if (end < n && array[end] > array[target])
+          target = end;
       }
       else
       {
         // Min-heap: ищем наименьший
-        if (left < n && array[left] < array[target])
-          target = left;
+        if (start < n && array[start] < array[target])
+          target = start;
 
-        if (right < n && array[right] < array[target])
-          target = right;
+        if (end < n && array[end] < array[target])
+          target = end;
       }
 
       if (target != i)
@@ -371,22 +371,82 @@ namespace Lab04
       if (!SortedCheck(array).Item1)
         throw new ArgumentException("Массив не отсортирован по возрастанию.");
 
-      int left = 0;
-      int right = array.Length - 1;
+      int start = 0;
+      int end = array.Length - 1;
 
-      while (left <= right)
+      while (start <= end)
       {
-        int mid = left + (right - left) / 2;
+        int mid = start + (end - start) / 2;
 
         if (array[mid] == target)
           return mid; // Элемент найден, возвращаем его индекс, в методе ввода/вывода прибавим 1
         if (array[mid] < target)
-          left = mid + 1;
+          start = mid + 1;
         else
-          right = mid - 1;
+          end = mid - 1;
       }
 
       throw new ArgumentException("Элемент не найден в массиве.");
+    }
+
+    static public int[] Shake(int[] array)
+    {
+      if (array.Length <= 1)
+        return (int[])array.Clone();
+
+      int[] result = (int[])array.Clone();
+      Random rand = new();
+
+      for (int i = result.Length - 1; i > 0; i--)
+      {
+        int j = rand.Next(0, i + 1);
+        (result[i], result[j]) = (result[j], result[i]);
+      }
+
+      return array;
+    }
+
+    static public int QuickSelect(int[] array, int k)
+    {
+      if (array == null || array.Length == 0)
+        throw new ArgumentException("Массив пуст.");
+      if (k < 1 || k > array.Length)
+        throw new ArgumentOutOfRangeException(nameof(k), $"k должно быть от 1 до {array.Length}.");
+
+      int[] workingArray = (int[])array.Clone();
+      return QuickSelectInternal(workingArray, 0, workingArray.Length - 1, k - 1); // переводим k в 0-индексацию
+    }
+
+    static private int QuickSelectInternal(int[] array, int start, int end, int k)
+    {
+      if (start == end)
+        return array[start];
+
+      int pivotIndex = PartitionLomuto(array, start, end);
+
+      if (k == pivotIndex)
+        return array[k];
+      else if (k < pivotIndex)
+        return QuickSelectInternal(array, start, pivotIndex - 1, k);
+      else
+        return QuickSelectInternal(array, pivotIndex + 1, end, k);
+    }
+
+    static private int PartitionLomuto(int[] array, int start, int end)
+    {
+      int pivot = array[end];
+      int i = start - 1;
+
+      for (int j = start; j < end; j++)
+      {
+        if (array[j] <= pivot)
+        {
+          i++;
+          (array[i], array[j]) = (array[j], array[i]);
+        }
+      }
+      (array[i + 1], array[end]) = (array[end], array[i + 1]);
+      return i + 1;
     }
   };
 
