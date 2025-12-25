@@ -560,6 +560,32 @@ namespace Lab05
       PrintCurrentArray();
     }
 
+    public void QuickSelectCurrentArray()
+    {
+      if (currentArray.Length == 0)
+      {
+        Console.WriteLine("Массив не заполнен.");
+        return;
+      }
+      Console.WriteLine("ПОИСК ПОРЯДКОВОЙ СТАТИСТИКИ");
+      int k = CommonUtilities.GetAndValidateNumber($"Введите номер порядковой статистики [1 ... {currentArray.Length}]", 1, currentArray.Length);
+      int kth = ArrayOperations.QuickSelect(currentArray, k);
+      Console.WriteLine($"{k}-я порядковая статистика: {kth}");
+    }
+
+    public void ShakeCurrentArray()
+    {
+      if (currentArray.Length == 0)
+      {
+        Console.WriteLine("Массив не заполнен.");
+        return;
+      }
+      Console.WriteLine("ПЕРЕМЕШИВАНИЕ МАССИВА");
+      currentArray = ArrayOperations.Shake(currentArray);
+      Console.WriteLine("Массив перемешан.");
+      PrintCurrentArray();
+    }
+
     public void MergeSortCurrentArray()
     {
       if (currentArray.Length == 0)
@@ -621,8 +647,10 @@ namespace Lab05
         Console.WriteLine("7 - Сортировка слиянием.");
         Console.WriteLine("8 - Пирамидальная сортировка.");
         Console.WriteLine("9 - Двоичный поиск массива.");
-        Console.WriteLine("10 - Выход.");
-        Console.Write("Введите номер операции (1 ... 10): ");
+        Console.WriteLine("10 - Поиск порядковой статистики.");
+        Console.WriteLine("11 - Перемешивание массива.");
+        Console.WriteLine("12 - Выход.");
+        Console.Write("Введите номер операции (1 ... 12): ");
         input = Console.ReadLine() ?? "";
 
         try
@@ -657,6 +685,12 @@ namespace Lab05
               BinarySearchCurrentArray();
               break;
             case "10":
+              BinarySearchCurrentArray();
+              break;
+            case "11":
+              BinarySearchCurrentArray();
+              break;
+            case "12":
               Console.WriteLine("Выход из программы.");
               break;
             default:
@@ -670,7 +704,7 @@ namespace Lab05
           Console.WriteLine(e.Message);
           continue;
         }
-      } while (input != "10");
+      } while (input != "12");
     }
   }
 
