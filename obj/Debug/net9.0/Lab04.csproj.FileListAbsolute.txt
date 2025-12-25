@@ -1,0 +1,14 @@
+/home/artemos/Documents/labs/cs/Lab04/bin/Debug/net9.0/Lab04
+/home/artemos/Documents/labs/cs/Lab04/bin/Debug/net9.0/Lab04.deps.json
+/home/artemos/Documents/labs/cs/Lab04/bin/Debug/net9.0/Lab04.runtimeconfig.json
+/home/artemos/Documents/labs/cs/Lab04/bin/Debug/net9.0/Lab04.dll
+/home/artemos/Documents/labs/cs/Lab04/bin/Debug/net9.0/Lab04.pdb
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.GeneratedMSBuildEditorConfig.editorconfig
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.AssemblyInfoInputs.cache
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.AssemblyInfo.cs
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.csproj.CoreCompileInputs.cache
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.dll
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/refint/Lab04.dll
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.pdb
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/Lab04.genruntimeconfig.cache
+/home/artemos/Documents/labs/cs/Lab04/obj/Debug/net9.0/ref/Lab04.dll

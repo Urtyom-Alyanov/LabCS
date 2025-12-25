@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "N5r/5S6xWXY=",
+  "success": true,
+  "projectFilePath": "/home/artemos/Documents/labs/cs/Lab04/Lab04.csproj",
+  "expectedPackageFiles": [
+    "/home/artemos/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.9/microsoft.aspnetcore.app.ref.9.0.9.nupkg.sha512"
+  ],
+  "logs": []
+}
