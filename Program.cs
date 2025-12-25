@@ -403,7 +403,7 @@ namespace Lab05
         (result[i], result[j]) = (result[j], result[i]);
       }
 
-      return array;
+      return result;
     }
 
     static public int QuickSelect(int[] array, int k)
@@ -685,10 +685,10 @@ namespace Lab05
               BinarySearchCurrentArray();
               break;
             case "10":
-              BinarySearchCurrentArray();
+              QuickSelectCurrentArray();
               break;
             case "11":
-              BinarySearchCurrentArray();
+              ShakeCurrentArray();
               break;
             case "12":
               Console.WriteLine("Выход из программы.");
