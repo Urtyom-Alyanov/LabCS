@@ -170,11 +170,11 @@ namespace Lab05
         }
     }
 
-    static public IEnumerable<int[]> QuickSort(int[] array, int first, int last, bool ascending = true) // Быстрая сортировка, генератор
+    static public IEnumerable<int[]> QuickSort(int[] array, bool ascending = true) // Быстрая сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
 
-      foreach (var step in QuickSortInternal(currentArray, first, last, ascending))
+      foreach (var step in QuickSortInternal(currentArray, 0, array.Length - 1, ascending))
         yield return step;
     }
 
@@ -217,20 +217,28 @@ namespace Lab05
       return i + 1; // Возвращаем индекс опорного элемента
     }
 
-    static public IEnumerable<int[]> MergeSort(int[] array, int first, int last, bool ascending = true)
+    static public IEnumerable<int[]> MergeSort(int[] array, bool ascending = true)
+    {
+      foreach (var step in MergeSortInternal(array, 0, array.Length - 1, ascending))
+        yield return step;
+    }
+
+    static private IEnumerable<int[]> MergeSortInternal(int[] array, int first, int last, bool ascending)
     {
       if (first < last)
       {
         int mid = first + (last - first) / 2;
 
-        foreach (var step in MergeSort(array, first, mid, ascending))
-          yield return (int[])step.Clone();
+        // Рекурсивно сортируем левую часть
+        foreach (var step in MergeSortInternal(array, first, mid, ascending))
+          yield return step;
 
-        foreach (var step in MergeSort(array, mid + 1, last, ascending))
-          yield return (int[])step.Clone();
+        // Рекурсивно сортируем правую часть
+        foreach (var step in MergeSortInternal(array, mid + 1, last, ascending))
+          yield return step;
 
         foreach (var step in Merge(array, first, mid, last, ascending))
-          yield return (int[])step.Clone();
+          yield return step;
       }
     }
 
@@ -422,7 +430,7 @@ namespace Lab05
       if (start == end)
         return array[start];
 
-      int pivotIndex = PartitionLomuto(array, start, end);
+      int pivotIndex = Partition(array, start, end);
 
       if (k == pivotIndex)
         return array[k];
@@ -430,23 +438,6 @@ namespace Lab05
         return QuickSelectInternal(array, start, pivotIndex - 1, k);
       else
         return QuickSelectInternal(array, pivotIndex + 1, end, k);
-    }
-
-    static private int PartitionLomuto(int[] array, int start, int end)
-    {
-      int pivot = array[end];
-      int i = start - 1;
-
-      for (int j = start; j < end; j++)
-      {
-        if (array[j] <= pivot)
-        {
-          i++;
-          (array[i], array[j]) = (array[j], array[i]);
-        }
-      }
-      (array[i + 1], array[end]) = (array[end], array[i + 1]);
-      return i + 1;
     }
   };
 
@@ -556,7 +547,7 @@ namespace Lab05
       }
       Console.WriteLine("БЫСТРАЯ СОРТИРОВКА");
       bool ascending = IsAscendingInput();
-      currentArray = PrintArrayStepByStep(ArrayOperations.QuickSort(currentArray, 0, currentArray.Length - 1, ascending));
+      currentArray = PrintArrayStepByStep(ArrayOperations.QuickSort(currentArray, ascending));
       PrintCurrentArray();
     }
 
@@ -595,7 +586,7 @@ namespace Lab05
       }
       Console.WriteLine("СОРТИРОВКА СЛИЯНИЕМ");
       bool ascending = IsAscendingInput();
-      currentArray = PrintArrayStepByStep(ArrayOperations.MergeSort(currentArray, 0, currentArray.Length - 1, ascending));
+      currentArray = PrintArrayStepByStep(ArrayOperations.MergeSort(currentArray, ascending));
       PrintCurrentArray();
     }
 
