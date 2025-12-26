@@ -2,6 +2,60 @@
 
 namespace Lab05
 {
+  // Типы шагов для гибкого вывода
+  public abstract class SortStep { }
+
+  public sealed class DataStep : SortStep
+  {
+    public int[] Data { get; }
+    public DataStep(int[] data)
+    {
+      Data = data ?? throw new ArgumentNullException(nameof(data));
+    }
+  }
+
+  public sealed class RangeStep : SortStep
+  {
+    public int Left { get; }
+    public int Right { get; }
+    public RangeStep(int left, int right)
+    {
+      Left = left;
+      Right = right;
+    }
+
+    public override string ToString() => $"{Left}-{Right}";
+  }
+
+  public sealed class InfoStep : SortStep
+  {
+    public string Message { get; }
+    public InfoStep(string message) => Message = message ?? throw new ArgumentNullException(nameof(message));
+  }
+
+  // Узел дерева диапазонов для вложенного вывода
+  public sealed class RangeNode
+  {
+    public int Left { get; }
+    public int Right { get; }
+    public List<RangeNode> Children { get; } = new();
+
+    public RangeNode(int left, int right)
+    {
+      Left = left;
+      Right = right;
+    }
+
+    public override string ToString()
+    {
+      if (Children.Count == 0)
+        return $"{Left}-{Right}";
+
+      var childrenStr = string.Join(" ", Children.Select(c => c.ToString()));
+      return $"[{Left}-{Right} {childrenStr}]";
+    }
+  }
+
   public class CommonUtilities
   {
     static public int GetAndValidateNumber(string? prompt, int min = -10_000, int max = 10_000)
@@ -71,9 +125,22 @@ namespace Lab05
       return array;
     }
 
-    static public IEnumerable<int[]> BubbleSort(int[] array, bool ascending = true) // Пузырьковая сортировка, генератор
+    static public void PrintArray(int[] array, string? prefix = null)
+    {
+      if (prefix != null)
+        Console.Write(prefix);
+
+      // Выравнивание через определение ширины самого большого числа
+      int maxWidth = array.Max(x => x.ToString().Length);
+      string formatted = string.Join(" ", array.Select(x => x.ToString().PadLeft(maxWidth)));
+      Console.WriteLine(formatted);
+    }
+
+    static public IEnumerable<SortStep> BubbleSort(int[] array, bool ascending = true) // Пузырьковая сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray); // Исходный массив
+
       int n = currentArray.Length;
       for (int i = 0; i < n - 1; i++)
       {
@@ -84,15 +151,18 @@ namespace Lab05
           {
             // Меняем элементы местами
             (currentArray[j], currentArray[j + 1]) = (currentArray[j + 1], currentArray[j]);
-            yield return (int[])currentArray.Clone();
+            yield return new DataStep((int[])currentArray.Clone());
           }
         }
       }
+      yield return new DataStep(currentArray); // Финальный массив (на случай, если не было обменов)
     }
 
-    static public IEnumerable<int[]> SelectionSort(int[] array, bool ascending = true) // Сортировка выбором, генератор
+    static public IEnumerable<SortStep> SelectionSort(int[] array, bool ascending = true) // Сортировка выбором, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray);
+
       int n = currentArray.Length;
       for (int i = 0; i < n - 1; i++)
       {
@@ -107,13 +177,15 @@ namespace Lab05
         }
         // Меняем найденный минимальный элемент с первым элементом
         (currentArray[minIndex], currentArray[i]) = (currentArray[i], currentArray[minIndex]);
-        yield return (int[])currentArray.Clone();
+        yield return new DataStep((int[])currentArray.Clone());
       }
     }
 
-    static public IEnumerable<int[]> InsertionSort(int[] array, bool ascending = true) // Сортировка вставками, генератор
+    static public IEnumerable<SortStep> InsertionSort(int[] array, bool ascending = true) // Сортировка вставками, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray);
+
       int n = currentArray.Length;
       for (int i = 1; i < n; i++)
       {
@@ -125,16 +197,18 @@ namespace Lab05
         {
           currentArray[j + 1] = currentArray[j];
           j--;
-          yield return (int[])currentArray.Clone();
+          yield return new DataStep((int[])currentArray.Clone());
         }
         currentArray[j + 1] = key;
-        yield return (int[])currentArray.Clone();
+        yield return new DataStep((int[])currentArray.Clone());
       }
     }
 
-    static public IEnumerable<int[]> CountingSort(int[] array, bool ascending = true) // Сортировка подсчётом, генератор
+    static public IEnumerable<SortStep> CountingSort(int[] array, bool ascending = true) // Сортировка подсчётом, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray);
+
       int max = currentArray.Max();
       int min = currentArray.Min();
       int range = max - min + 1; // Диапазон значений в массиве
@@ -155,7 +229,7 @@ namespace Lab05
           {
             currentArray[index++] = i + min; // Восстанавливаем значение элемента
             count[i]--;
-            yield return (int[])currentArray.Clone();
+            yield return new DataStep((int[])currentArray.Clone());
           }
         }
       else
@@ -165,33 +239,45 @@ namespace Lab05
           {
             currentArray[index++] = i + min; // Восстанавливаем значение элемента
             count[i]--;
-            yield return (int[])currentArray.Clone();
+            yield return new DataStep((int[])currentArray.Clone());
           }
         }
     }
 
-    static public IEnumerable<int[]> QuickSort(int[] array, bool ascending = true) // Быстрая сортировка, генератор
+    static public IEnumerable<SortStep> QuickSort(int[] array, bool ascending = true) // Быстрая сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray); // Исходный массив
 
-      foreach (var step in QuickSortInternal(currentArray, 0, array.Length - 1, ascending))
+      var root = new RangeNode(0, array.Length - 1);
+      foreach (var step in QuickSortInternal(currentArray, 0, array.Length - 1, ascending, root))
         yield return step;
+
+      // Выводим структуру разбиения
+      yield return new InfoStep(root.ToString());
+
+      yield return new DataStep(currentArray); // Отсортированный массив
     }
 
     // Вспомогательный рекурсивный метод, возвращающий последовательность шагов
-    static private IEnumerable<int[]> QuickSortInternal(int[] array, int first, int last, bool ascending)
+    static private IEnumerable<SortStep> QuickSortInternal(int[] array, int first, int last, bool ascending, RangeNode parentNode)
     {
       if (first < last)
       {
         int pivotIndex = Partition(array, first, last, ascending);
-        yield return (int[])array.Clone(); // состояние после разделения
+
+        // Добавляем дочерние узлы
+        var leftChild = new RangeNode(first, pivotIndex - 1);
+        var rightChild = new RangeNode(pivotIndex + 1, last);
+        parentNode.Children.Add(leftChild);
+        parentNode.Children.Add(rightChild);
 
         // Рекурсивно сортируем левую часть
-        foreach (var step in QuickSortInternal(array, first, pivotIndex - 1, ascending))
+        foreach (var step in QuickSortInternal(array, first, pivotIndex - 1, ascending, leftChild))
           yield return step;
 
         // Рекурсивно сортируем правую часть
-        foreach (var step in QuickSortInternal(array, pivotIndex + 1, last, ascending))
+        foreach (var step in QuickSortInternal(array, pivotIndex + 1, last, ascending, rightChild))
           yield return step;
       }
     }
@@ -217,32 +303,43 @@ namespace Lab05
       return i + 1; // Возвращаем индекс опорного элемента
     }
 
-    static public IEnumerable<int[]> MergeSort(int[] array, bool ascending = true)
+    static public IEnumerable<SortStep> MergeSort(int[] array, bool ascending = true)
     {
-      foreach (var step in MergeSortInternal(array, 0, array.Length - 1, ascending))
+      int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray); // Исходный
+
+      var root = new RangeNode(0, array.Length - 1);
+      foreach (var step in MergeSortInternal(currentArray, 0, array.Length - 1, ascending, root))
         yield return step;
+
+      // Выводим структуру слияния
+      yield return new InfoStep(root.ToString());
+
+      yield return new DataStep(currentArray); // Результат
     }
 
-    static private IEnumerable<int[]> MergeSortInternal(int[] array, int first, int last, bool ascending)
+    static private IEnumerable<SortStep> MergeSortInternal(int[] array, int first, int last, bool ascending, RangeNode parentNode)
     {
       if (first < last)
       {
         int mid = first + (last - first) / 2;
 
+        var leftChild = new RangeNode(first, mid);
+        var rightChild = new RangeNode(mid + 1, last);
+        parentNode.Children.Add(leftChild);
+        parentNode.Children.Add(rightChild);
+
         // Рекурсивно сортируем левую часть
-        foreach (var step in MergeSortInternal(array, first, mid, ascending))
+        foreach (var step in MergeSortInternal(array, first, mid, ascending, leftChild))
           yield return step;
 
         // Рекурсивно сортируем правую часть
-        foreach (var step in MergeSortInternal(array, mid + 1, last, ascending))
-          yield return step;
-
-        foreach (var step in Merge(array, first, mid, last, ascending))
+        foreach (var step in MergeSortInternal(array, mid + 1, last, ascending, rightChild))
           yield return step;
       }
     }
 
-    static private IEnumerable<int[]> Merge(int[] array, int first, int mid, int last, bool ascending = true)
+    static private IEnumerable<SortStep> Merge(int[] array, int first, int mid, int last, bool ascending = true)
     {
       int n1 = mid - first + 1;
       int n2 = last - mid;
@@ -274,7 +371,7 @@ namespace Lab05
           jIndex++;
         }
         k++;
-        yield return (int[])array.Clone();
+        yield return new DataStep((int[])array.Clone());
       }
 
       while (iIndex < n1)
@@ -282,7 +379,7 @@ namespace Lab05
         array[k] = L[iIndex];
         iIndex++;
         k++;
-        yield return (int[])array.Clone();
+        yield return new DataStep((int[])array.Clone());
       }
 
       while (jIndex < n2)
@@ -290,32 +387,38 @@ namespace Lab05
         array[k] = R[jIndex];
         jIndex++;
         k++;
-        yield return (int[])array.Clone();
+        yield return new DataStep((int[])array.Clone());
       }
     }
 
-    static public IEnumerable<int[]> HeapSort(int[] array, bool ascending = true) // Пирамидальная сортировка, генератор
+    static public IEnumerable<SortStep> HeapSort(int[] array, bool ascending = true) // Пирамидальная сортировка, генератор
     {
       int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray); // Исходный массив
+
       int n = currentArray.Length;
 
+      yield return new InfoStep("Построение кучи:");
       for (int i = n / 2 - 1; i >= 0; i--)
       {
         foreach (var step in Heapify(currentArray, n, i, ascending))
           yield return step;
       }
+      yield return new InfoStep("Построение кучи завершено.");
 
       for (int i = n - 1; i > 0; i--)
       {
         (currentArray[0], currentArray[i]) = (currentArray[i], currentArray[0]);
-        yield return currentArray;
+        yield return new DataStep((int[])currentArray.Clone());
 
         foreach (var step in Heapify(currentArray, i, 0, ascending))
           yield return step;
       }
+
+      yield return new DataStep(currentArray); // Финальный результат
     }
 
-    static private IEnumerable<int[]> Heapify(int[] array, int n, int i, bool ascending = true) // Вспомогательный метод для пирамидальной сортировки
+    static private IEnumerable<SortStep> Heapify(int[] array, int n, int i, bool ascending = true) // Вспомогательный метод для пирамидальной сортировки
     {
       int target = i;
       int start = 2 * i + 1;
@@ -343,16 +446,11 @@ namespace Lab05
       if (target != i)
       {
         (array[i], array[target]) = (array[target], array[i]);
-        yield return array;
+        yield return new DataStep((int[])array.Clone());
 
         foreach (var step in Heapify(array, n, target, ascending))
           yield return step;
       }
-    }
-
-    static public void PrintArray(int[] array) // Метод для печати массива
-    {
-      Console.WriteLine(string.Join(" ", array));
     }
 
     static public (bool, bool) SortedCheck(int[] array)
@@ -414,7 +512,7 @@ namespace Lab05
       return result;
     }
 
-    static public int QuickSelect(int[] array, int k)
+    static public (int, int[]) QuickSelect(int[] array, int k)
     {
       if (array == null || array.Length == 0)
         throw new ArgumentException("Массив пуст.");
@@ -425,15 +523,15 @@ namespace Lab05
       return QuickSelectInternal(workingArray, 0, workingArray.Length - 1, k - 1); // переводим k в 0-индексацию
     }
 
-    static private int QuickSelectInternal(int[] array, int start, int end, int k)
+    static private (int, int[]) QuickSelectInternal(int[] array, int start, int end, int k)
     {
       if (start == end)
-        return array[start];
+        return (array[start], array);
 
       int pivotIndex = Partition(array, start, end);
 
       if (k == pivotIndex)
-        return array[k];
+        return (array[k], array);
       else if (k < pivotIndex)
         return QuickSelectInternal(array, start, pivotIndex - 1, k);
       else
@@ -446,14 +544,33 @@ namespace Lab05
   {
     private int[] currentArray = new int[0]; // Если массив не заполнен, его длина равна 0
 
-
-    static public int[] PrintArrayStepByStep(IEnumerable<int[]> sortingSteps) // Метод для поэтапного вывода сортировки
+    static public int[] PrintArrayStepByStep(IEnumerable<SortStep> sortingSteps) // Метод для поэтапного вывода сортировки
     {
+      int[] finalArray = null;
       foreach (var step in sortingSteps)
       {
-        ArrayOperations.PrintArray(step);
+        switch (step)
+        {
+          case DataStep ds:
+            ArrayOperations.PrintArray(ds.Data);
+            finalArray = ds.Data;
+            break;
+
+          case RangeStep rs:
+            Console.WriteLine($" [{rs}]");
+            break;
+
+          case InfoStep info:
+            Console.WriteLine(info.Message);
+            break;
+
+          default:
+            throw new NotSupportedException("Неизвестный тип шага сортировки.");
+        }
       }
-      return sortingSteps.Last(); // Возвращаем отсортированный массив
+      if (finalArray == null)
+        throw new InvalidOperationException("Сортировка не вернула финальный массив.");
+      return finalArray; // Возвращаем отсортированный массив
     }
 
     public void PrintCurrentArray()
@@ -559,9 +676,12 @@ namespace Lab05
         return;
       }
       Console.WriteLine("ПОИСК ПОРЯДКОВОЙ СТАТИСТИКИ");
+      PrintCurrentArray();
       int k = CommonUtilities.GetAndValidateNumber($"Введите номер порядковой статистики [1 ... {currentArray.Length}]", 1, currentArray.Length);
-      int kth = ArrayOperations.QuickSelect(currentArray, k);
-      Console.WriteLine($"{k}-я порядковая статистика: {kth}");
+      var res = ArrayOperations.QuickSelect(currentArray, k);
+      Console.WriteLine($"{k}-я порядковая статистика: {res.Item1}");
+      currentArray = res.Item2;
+      PrintCurrentArray();
     }
 
     public void ShakeCurrentArray()
