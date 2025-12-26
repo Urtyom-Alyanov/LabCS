@@ -69,16 +69,16 @@ namespace Lab05
           throw new ArgumentOutOfRangeException(null, null, $"Ошибка: число вне диапазона [{min} ... {max}].");
         return numb; // Возвращаем валидный коэффициент
       }
-      catch (Exception e)
+      catch (Exception exception)
       {
-        switch (e)
+        switch (exception)
         {
           case FormatException:
             throw new FormatException("Ошибка: введено не число.");
           case OverflowException:
             throw new OverflowException($"Ошибка: число слишком большое или слишком маленькое, вне диапозона [{min} ... {max}].");
           default:
-            throw e;
+            throw exception;
         }
       }
     }
@@ -94,16 +94,16 @@ namespace Lab05
           throw new ArgumentOutOfRangeException(null, null, "Ошибка: введено не 0 и не 1.");
         return numb == 1; // Возвращаем валидный коэффициент
       }
-      catch (Exception e)
+      catch (Exception exception)
       {
-        switch (e)
+        switch (exception)
         {
           case FormatException:
             throw new FormatException("Ошибка: введено не число.");
           case OverflowException:
             throw new OverflowException("Ошибка: число слишком большое или слишком маленькое.");
           default:
-            throw e;
+            throw exception;
         }
       }
     }
@@ -810,9 +810,9 @@ namespace Lab05
           }
           ;
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-          Console.WriteLine(e.Message);
+          Console.WriteLine(exception.Message);
           continue;
         }
       } while (input != "12");
