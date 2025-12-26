@@ -16,15 +16,15 @@ namespace Lab05
 
   public sealed class RangeStep : SortStep
   {
-    public int Left { get; }
-    public int Right { get; }
-    public RangeStep(int left, int right)
+    public int Start { get; }
+    public int End { get; }
+    public RangeStep(int start, int end)
     {
-      Left = left;
-      Right = right;
+      Start = start;
+      End = end;
     }
 
-    public override string ToString() => $"{Left}-{Right}";
+    public override string ToString() => $"{Start}-{End}";
   }
 
   public sealed class InfoStep : SortStep
@@ -36,23 +36,23 @@ namespace Lab05
   // Узел дерева диапазонов для вложенного вывода
   public sealed class RangeNode
   {
-    public int Left { get; }
-    public int Right { get; }
+    public int Start { get; }
+    public int End { get; }
     public List<RangeNode> Children { get; } = new();
 
-    public RangeNode(int left, int right)
+    public RangeNode(int start, int end)
     {
-      Left = left;
-      Right = right;
+      Start = start;
+      End = end;
     }
 
     public override string ToString()
     {
       if (Children.Count == 0)
-        return $"{Left}-{Right}";
+        return $"{Start}-{End}";
 
       var childrenStr = string.Join(" ", Children.Select(c => c.ToString()));
-      return $"[{Left}-{Right} {childrenStr}]";
+      return $"[{Start}-{End} {childrenStr}]";
     }
   }
 
@@ -69,16 +69,16 @@ namespace Lab05
           throw new ArgumentOutOfRangeException(null, null, $"Ошибка: число вне диапазона [{min} ... {max}].");
         return numb; // Возвращаем валидный коэффициент
       }
-      catch (Exception e)
+      catch (Exception end)
       {
-        switch (e)
+        switch (end)
         {
           case FormatException:
             throw new FormatException("Ошибка: введено не число.");
           case OverflowException:
             throw new OverflowException($"Ошибка: число слишком большое или слишком маленькое, вне диапозона [{min} ... {max}].");
           default:
-            throw e;
+            throw end;
         }
       }
     }
@@ -94,16 +94,16 @@ namespace Lab05
           throw new ArgumentOutOfRangeException(null, null, "Ошибка: введено не 0 и не 1.");
         return numb == 1; // Возвращаем валидный коэффициент
       }
-      catch (Exception e)
+      catch (Exception end)
       {
-        switch (e)
+        switch (end)
         {
           case FormatException:
             throw new FormatException("Ошибка: введено не число.");
           case OverflowException:
             throw new OverflowException("Ошибка: число слишком большое или слишком маленькое.");
           default:
-            throw e;
+            throw end;
         }
       }
     }
@@ -267,17 +267,17 @@ namespace Lab05
         int pivotIndex = Partition(array, first, last, ascending);
 
         // Добавляем дочерние узлы
-        var leftChild = new RangeNode(first, pivotIndex - 1);
-        var rightChild = new RangeNode(pivotIndex + 1, last);
-        parentNode.Children.Add(leftChild);
-        parentNode.Children.Add(rightChild);
+        var startChild = new RangeNode(first, pivotIndex - 1);
+        var endChild = new RangeNode(pivotIndex + 1, last);
+        parentNode.Children.Add(startChild);
+        parentNode.Children.Add(endChild);
 
         // Рекурсивно сортируем левую часть
-        foreach (var step in QuickSortInternal(array, first, pivotIndex - 1, ascending, leftChild))
+        foreach (var step in QuickSortInternal(array, first, pivotIndex - 1, ascending, startChild))
           yield return step;
 
         // Рекурсивно сортируем правую часть
-        foreach (var step in QuickSortInternal(array, pivotIndex + 1, last, ascending, rightChild))
+        foreach (var step in QuickSortInternal(array, pivotIndex + 1, last, ascending, endChild))
           yield return step;
       }
     }
@@ -324,17 +324,17 @@ namespace Lab05
       {
         int mid = first + (last - first) / 2;
 
-        var leftChild = new RangeNode(first, mid);
-        var rightChild = new RangeNode(mid + 1, last);
-        parentNode.Children.Add(leftChild);
-        parentNode.Children.Add(rightChild);
+        var startChild = new RangeNode(first, mid);
+        var endChild = new RangeNode(mid + 1, last);
+        parentNode.Children.Add(startChild);
+        parentNode.Children.Add(endChild);
 
         // Рекурсивно сортируем левую часть
-        foreach (var step in MergeSortInternal(array, first, mid, ascending, leftChild))
+        foreach (var step in MergeSortInternal(array, first, mid, ascending, startChild))
           yield return step;
 
         // Рекурсивно сортируем правую часть
-        foreach (var step in MergeSortInternal(array, mid + 1, last, ascending, rightChild))
+        foreach (var step in MergeSortInternal(array, mid + 1, last, ascending, endChild))
           yield return step;
       }
     }
@@ -343,13 +343,13 @@ namespace Lab05
     {
       int n1 = mid - first + 1;
       int n2 = last - mid;
-      int[] L = new int[n1];
-      int[] R = new int[n2];
+      int[] start = new int[n1];
+      int[] end = new int[n2];
 
       for (int i = 0; i < n1; i++)
-        L[i] = array[first + i];
+        start[i] = array[first + i];
       for (int j = 0; j < n2; j++)
-        R[j] = array[mid + 1 + j];
+        end[j] = array[mid + 1 + j];
 
       int k = first;
       int iIndex = 0, jIndex = 0;
@@ -357,17 +357,17 @@ namespace Lab05
       while (iIndex < n1 && jIndex < n2)
       {
         bool takeFromstart = ascending
-            ? L[iIndex] <= R[jIndex]
-            : L[iIndex] >= R[jIndex];
+            ? start[iIndex] <= end[jIndex]
+            : start[iIndex] >= end[jIndex];
 
         if (takeFromstart)
         {
-          array[k] = L[iIndex];
+          array[k] = start[iIndex];
           iIndex++;
         }
         else
         {
-          array[k] = R[jIndex];
+          array[k] = end[jIndex];
           jIndex++;
         }
         k++;
@@ -376,7 +376,7 @@ namespace Lab05
 
       while (iIndex < n1)
       {
-        array[k] = L[iIndex];
+        array[k] = start[iIndex];
         iIndex++;
         k++;
         yield return new DataStep((int[])array.Clone());
@@ -384,7 +384,7 @@ namespace Lab05
 
       while (jIndex < n2)
       {
-        array[k] = R[jIndex];
+        array[k] = end[jIndex];
         jIndex++;
         k++;
         yield return new DataStep((int[])array.Clone());
@@ -810,9 +810,9 @@ namespace Lab05
           }
           ;
         }
-        catch (Exception e)
+        catch (Exception end)
         {
-          Console.WriteLine(e.Message);
+          Console.WriteLine(end.Message);
           continue;
         }
       } while (input != "12");
