@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Lab05
+namespace Lab06
 {
   // Типы шагов для гибкого вывода
   public abstract class SortStep { }
@@ -329,12 +329,17 @@ namespace Lab05
         parentNode.Children.Add(leftChild);
         parentNode.Children.Add(rightChild);
 
+
+
         // Рекурсивно сортируем левую часть
         foreach (var step in MergeSortInternal(array, first, mid, ascending, leftChild))
           yield return step;
 
         // Рекурсивно сортируем правую часть
         foreach (var step in MergeSortInternal(array, mid + 1, last, ascending, rightChild))
+          yield return step;
+
+        foreach (var step in Merge(array, first, mid, last, ascending))
           yield return step;
       }
     }
@@ -418,6 +423,33 @@ namespace Lab05
       yield return new DataStep(currentArray); // Финальный результат
     }
 
+    static public IEnumerable<SortStep> TernaryHeapSort(int[] array, bool ascending = true) // Пирамидальная сортировка, генератор
+    {
+      int[] currentArray = (int[])array.Clone();
+      yield return new DataStep(currentArray); // Исходный массив
+
+      int n = currentArray.Length;
+
+      yield return new InfoStep("Построение кучи:");
+      for (int i = n / 2 - 1; i >= 0; i--)
+      {
+        foreach (var step in TernaryHeapify(currentArray, n, i, ascending))
+          yield return step;
+      }
+      yield return new InfoStep("Построение кучи завершено.");
+
+      for (int i = n - 1; i > 0; i--)
+      {
+        (currentArray[0], currentArray[i]) = (currentArray[i], currentArray[0]);
+        yield return new DataStep((int[])currentArray.Clone());
+
+        foreach (var step in TernaryHeapify(currentArray, i, 0, ascending))
+          yield return step;
+      }
+
+      yield return new DataStep(currentArray); // Финальный результат
+    }
+
     static private IEnumerable<SortStep> Heapify(int[] array, int n, int i, bool ascending = true) // Вспомогательный метод для пирамидальной сортировки
     {
       int target = i;
@@ -449,6 +481,45 @@ namespace Lab05
         yield return new DataStep((int[])array.Clone());
 
         foreach (var step in Heapify(array, n, target, ascending))
+          yield return step;
+      }
+    }
+
+    static private IEnumerable<SortStep> TernaryHeapify(int[] array, int heapSize, int rootIndex, bool ascending)
+    {
+      int largest = rootIndex; // Инициализируем наибольший элемент как корень
+
+      // Индексы трех дочерних элементов
+      int child1 = 3 * rootIndex + 1;
+      int child2 = 3 * rootIndex + 2;
+      int child3 = 3 * rootIndex + 3;
+
+      // Для возрастания используем max-heap, для убывания - min-heap с помощью лямбда-функции
+      Func<int, int, bool> compare = ascending
+          ? (a, b) => a > b  // max-heap: ищем наибольший
+          : (a, b) => a < b; // min-heap: ищем наименьший
+
+      // Сравниваем с первым дочерним элементом
+      if (child1 < heapSize && compare(array[child1], array[largest]))
+        largest = child1;
+
+      // Сравниваем со вторым дочерним элементом
+      if (child2 < heapSize && compare(array[child2], array[largest]))
+        largest = child2;
+
+      // Сравниваем с третьим дочерним элементом
+      if (child3 < heapSize && compare(array[child3], array[largest]))
+        largest = child3;
+
+      // Если наибольший элемент не корень
+      if (largest != rootIndex)
+      {
+        // Меняем корень и наибольший элемент местами
+        (array[rootIndex], array[largest]) = (array[largest], array[rootIndex]);
+        yield return new DataStep((int[])array.Clone());
+
+        // Рекурсивно восстанавливаем кучу для затронутого поддерева
+        foreach (var step in TernaryHeapify(array, heapSize, largest, ascending))
           yield return step;
       }
     }
@@ -723,6 +794,19 @@ namespace Lab05
       PrintCurrentArray();
     }
 
+    public void TernaryHeapSortCurrentArray()
+    {
+      if (currentArray.Length == 0)
+      {
+        Console.WriteLine("Массив не заполнен.");
+        return;
+      }
+      Console.WriteLine("ТЕРНАРНАЯ ПИРАМИДАЛЬНАЯ СОРТИРОВКА");
+      bool ascending = IsAscendingInput();
+      currentArray = PrintArrayStepByStep(ArrayOperations.TernaryHeapSort(currentArray, ascending));
+      PrintCurrentArray();
+    }
+
     public void BinarySearchCurrentArray()
     {
       if (currentArray.Length == 0)
@@ -757,11 +841,12 @@ namespace Lab05
         Console.WriteLine("6 - Быстрая сортировка.");
         Console.WriteLine("7 - Сортировка слиянием.");
         Console.WriteLine("8 - Пирамидальная сортировка.");
-        Console.WriteLine("9 - Двоичный поиск массива.");
-        Console.WriteLine("10 - Поиск порядковой статистики.");
-        Console.WriteLine("11 - Перемешивание массива.");
-        Console.WriteLine("12 - Выход.");
-        Console.Write("Введите номер операции (1 ... 12): ");
+        Console.WriteLine("9 - Тернарная пирамидальная сортировка.");
+        Console.WriteLine("10 - Двоичный поиск массива.");
+        Console.WriteLine("11 - Поиск порядковой статистики.");
+        Console.WriteLine("12 - Перемешивание массива.");
+        Console.WriteLine("13 - Выход.");
+        Console.Write("Введите номер операции (1 ... 13): ");
         input = Console.ReadLine() ?? "";
 
         try
@@ -793,15 +878,18 @@ namespace Lab05
               HeapSortCurrentArray();
               break;
             case "9":
-              BinarySearchCurrentArray();
+              TernaryHeapSortCurrentArray();
               break;
             case "10":
-              QuickSelectCurrentArray();
+              BinarySearchCurrentArray();
               break;
             case "11":
-              ShakeCurrentArray();
+              QuickSelectCurrentArray();
               break;
             case "12":
+              ShakeCurrentArray();
+              break;
+            case "13":
               Console.WriteLine("Выход из программы.");
               break;
             default:
@@ -815,7 +903,7 @@ namespace Lab05
           Console.WriteLine(e.Message);
           continue;
         }
-      } while (input != "12");
+      } while (input != "13");
     }
   }
 
